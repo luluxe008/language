@@ -1,24 +1,17 @@
 use errors::{PartialLocation, display_errors};
 use token::Tokenizer;
 
-use crate::errors::{Error, Location};
-use std::io::prelude::*;
-
 mod token;
 mod errors;
 mod ast;
 
-struct Interpreter{
+struct JIT{
 
 }
 
-impl Interpreter{
-    pub fn execute_line(line: String){
+impl JIT{
 
-    }
-
-    // TODO add run_file(file: _);
-
+    /// run the Tokenizer
     pub fn run_stdio(&mut self){
         let mut line = 0;
         loop {
@@ -51,6 +44,6 @@ impl Interpreter{
 }
 
 fn main(){
-    let mut intepreter = Interpreter{};
+    let mut intepreter = JIT{};
     intepreter.run_stdio();
 }

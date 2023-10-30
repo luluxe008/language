@@ -43,14 +43,17 @@ impl PartialLocation{
         }
     }
 
+    /// create a PartialLocation with stdin settings
     pub fn stdin(line: u64) -> Self{
         Self { filename: "stdin".into(), line}
     }
 
+    /// create a PartialLocation with not-specified settings
     pub fn not_specified(line: u64) -> Self{
         Self { filename: "not specified".into(), line}
     }
 
+    /// create a PartialLocation with testing settings
     pub fn testing(line: u64) -> Self{
         Self { filename: "test".into(), line}
     }
@@ -62,7 +65,7 @@ impl PartialLocation{
 pub struct Location{
     filename: String, //no need to mutate this string
     line: u64,
-    char: u32
+    char_pos: u32
 }
 
 impl Location{
@@ -71,20 +74,26 @@ impl Location{
         Location{
             filename: filename.into(),
             line,
-            char
+            char_pos: char
         }
     }
 
+    /// edit line
+    /// can be chained
     pub fn line(mut self, line: u64) -> Self{
         self.line = line;
         self
     }
 
-    pub fn char(mut self, char: u32) -> Self{
-        self.char = char;
+    /// edit char position
+    /// can be chained
+    pub fn char_pos(mut self, char_pos: u32) -> Self{
+        self.char_pos = char_pos;
         self
     }
 
+    /// edit filename
+    /// can be chained
     pub fn filename(mut self, filename: impl Into<String>) -> Self{
         self.filename = filename.into();
         self
@@ -99,7 +108,7 @@ impl From<PartialLocation> for Location{
         Location {
             filename: value.filename,
             line: value.line ,
-            char:0,
+            char_pos:0,
          }
     }
 }
@@ -118,8 +127,11 @@ pub struct Error{
 }
 
 impl Error{
-    /// create a new Error
-    pub fn new<S>(err_type: ErrorType, location:Location, name: S, desc: S, line: S) -> Self
+    /// create a new Error.
+    /// 
+    /// Don't use this method (that's why it is not public)
+    /// Use one of the following method to create better error
+    fn new<S>(err_type: ErrorType, location:Location, name: S, desc: S, line: S) -> Self
     where S: Into<String> 
     {
         Error { 
@@ -149,17 +161,25 @@ impl Error{
     }
 
     /// create a illegal character error. It indicates that a illegal charactrer was encountred
-    pub fn illegal_character<S>(location:Location, line: S, code: u64) -> Self
+    pub fn illegal_character<S>(location:Location, line: S, char: char) -> Self
     where S: Into<String> 
     {
 
-        Self::new(ErrorType::Error, location, "IllegalCharacter", format!("An illegal character of code [{}] was encountred", code).as_str(), line.into().as_str())
+        Self::new(ErrorType::Error, location, "IllegalCharacter",
+         &format!("An illegal character of code [{}] was encountred", char as u64),
+          line.into().as_str())
     }
 
-    /// create a excepted token error. It indicates that an exceoted token was not found
+    /// create a excepted token error. It indicates that an excepted token was not found
     pub fn excepted_token<S>(location:Location, line: S, excepted: S) -> Self
     where S: Into<String> {
-        Self::new(ErrorType::Error, location, "ExceptedToken", format!("Excepted Token {}", excepted.into()).as_str(), line.into().as_str())
+        Self::new(ErrorType::Error, location, "ExceptedToken", format!("Excepted Token [{}]", excepted.into()).as_str(), line.into().as_str())
+    }
+
+    /// create a unexcepted token error. It indicates that an unexcepted token was found
+    pub fn unexcepted_token<S>(location:Location, line: S, token: S) -> Self
+    where S: Into<String> {
+        Self::new(ErrorType::Error, location, "UnexceptedToken", format!("Unexpected Token [{}]", token.into()).as_str(), line.into().as_str())
     }
 
 
@@ -176,14 +196,16 @@ impl Error{
 
 
 impl Display for Error{
+    /// basic error output
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {} in {} at {}:{}\n|\t{}\n{}", 
+        write!(f, "{}: {} in {} at {}:{}\n|\t{}\n|\t{}\n{}", 
         self.err_type.to_string(),
         self.name,
         self.location.filename,
         self.location.line,
-        self.location.char,
+        self.location.char_pos,
         self.line,
+        " ".repeat(self.location.char_pos as usize) + "^",
         self.desc
      )
     }
@@ -193,8 +215,6 @@ impl Display for Error{
 /// print errors
 pub fn display_errors(errs: Vec<Error>){
     for err in errs{
-        println!("{err}")
+        println!("{err}\n")
     }
 }
-
-//TODO test
